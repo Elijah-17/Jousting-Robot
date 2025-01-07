@@ -278,6 +278,7 @@ document.getElementById("retreatButton");
 # Start web server
 addr = socket.getaddrinfo("0.0.0.0", 8080)[0][-1]
 server = socket.socket()
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(addr)
 server.listen(1)
 print("Listening on", addr)
