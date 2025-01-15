@@ -105,7 +105,7 @@ HTML = """
             text-align: center;
             background-color: #99CCFF;
         }
-        
+
         #joystick-container {
             position: absolute;
             width: 350px;
@@ -115,7 +115,7 @@ HTML = """
             border-radius: 50%;
             border: 2px solid #aaa;
         }
-        
+
         #joystick {
             position: absolute;
             width: 100px;
@@ -126,7 +126,7 @@ HTML = """
             left: 125px;
             touch-action: none;
         }
-        
+
         #stabButton {
             position: absolute;
             width: 300px;
@@ -141,9 +141,10 @@ HTML = """
             justify-content: center;
             align-items: center;
             top: 50px;
-            left: 550px; on the page */
+            left: 550px;
         }
-      #retreatButton {
+
+        #retreatButton {
             position: absolute;
             width: 300px;
             height: 100px;
@@ -157,10 +158,10 @@ HTML = """
             justify-content: center;
             align-items: center;
             top: 150px;
-            left: 550px; on the page 
+            left: 550px;
         }
-      
-      #soundButton {
+
+        #soundButton {
             position: absolute;
             width: 300px;
             height: 100px;
@@ -174,17 +175,45 @@ HTML = """
             justify-content: center;
             align-items: center;
             top: 275px;
-            left: 550px; on the page 
+            left: 550px;
         }
-        
+
         #stabButton:hover {
             background: #0056b3;
         }
-      #retreatButton:hover{
-        background: #0056b3;
-      }
-         #soundButton:hover {
+
+        #retreatButton:hover {
             background: #0056b3;
+        }
+
+        #soundButton:hover {
+            background: #0056b3;
+        }
+
+        /* Style for the vertical slider */
+        #verticalSlider {
+            position: absolute;
+            top: 50px;
+            left: 950px;
+            width: 30px;
+            height: 300px;
+        }
+
+        #verticalSlider input {
+            width: 100%;
+            height: 100%;
+            transform: rotate(0deg);  /* Rotate slider 90 degrees */
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical; /* For cross-browser support */
+            background: #ddd;
+        }
+
+        #sliderValue {
+            position: absolute;
+            top: 380px;
+            left: 950px;
+            font-size: 16px;
+            color: #007bff;
         }
     </style>
 </head>
@@ -195,7 +224,14 @@ HTML = """
     <button id="stabButton">Stab!</button>
     <button id="retreatButton">Retreat!</button>
     <button id="soundButton">Sound</button>
+
+    <!-- Vertical Slider -->
+    <div id="verticalSlider">
+        <input type="range" id="slider" min="1802" max="7664" value="1802" />
+    </div>
+
     <p id="status">Status: Waiting...</p>
+    <p id="sliderValue">Slider Value: 1802</p>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -203,9 +239,10 @@ HTML = """
             const container = document.getElementById("joystick-container");
             const status = document.getElementById("status");
             const stabButton = document.getElementById("stabButton");
-          const retreatButton =
-document.getElementById("retreatButton");
-          const soundButton = document.getElementById("soundButton");
+            const retreatButton = document.getElementById("retreatButton");
+            const soundButton = document.getElementById("soundButton");
+            const slider = document.getElementById("slider");
+            const sliderValue = document.getElementById("sliderValue");
 
             const containerRect = container.getBoundingClientRect();
             const joystickRadius = joystick.offsetWidth / 2;
@@ -216,11 +253,14 @@ document.getElementById("retreatButton");
             joystick.addEventListener("pointerdown", () => isDragging = true);
             joystick.addEventListener("pointerup", resetJoystick);
             joystick.addEventListener("pointermove", (e) => isDragging && moveJoystick(e));
-          
-          
-  stabButton.addEventListener("click", sendStabCommand);
-   retreatButton.addEventListner("click", sendRetreatCommand);
-   soundButton.addEventListner("click", sendSoundCommand);
+
+            stabButton.addEventListener("click", sendStabCommand);
+            retreatButton.addEventListener("click", sendRetreatCommand);
+            soundButton.addEventListener("click", sendSoundCommand);
+
+            slider.addEventListener("input", (e) => {
+                sliderValue.textContent = `Slider Value: ${e.target.value}`;
+            });
 
             function resetJoystick() {
                 isDragging = false;
@@ -264,15 +304,20 @@ document.getElementById("retreatButton");
                     updateStatus("stab!");
                 }).catch(console.error);
             }
+
+            function sendRetreatCommand() {
+                fetch(`/retreat`).catch(console.error);
+            }
+
+            function sendSoundCommand() {
+                fetch(`/sound`).then(() => {
+                    updateStatus("sound!");
+                }).catch(console.error);
+            }
         });
-        function sendSoundCommand(){
-        fetch(`/sound`).then(() => {
-            updateStatus("sound!");
-        }).catch(console.error);
     </script>
 </body>
 </html>
-
 """
 
 # Start web server
