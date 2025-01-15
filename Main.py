@@ -12,6 +12,12 @@ motor2_a = machine.Pin(4, machine.Pin.OUT)
 motor2_b = machine.Pin(5, machine.Pin.OUT)
 motor2_PWM = machine.Pin(1, machine.Pin.OUT)
 
+# Servo control pin
+servo_pin = machine.Pin(12)  # Change the pin number based on your setup
+servo_pwm = machine.PWM(servo_pin)
+servo_pwm.freq(50)  # Frequency for controlling servo (50Hz is standard for most servos)
+
+
 # Buzzer and note frequencies (in Hz)
 buzzer = machine.PWM(machine.Pin(15))
 
@@ -47,6 +53,12 @@ while not wlan.isconnected():
     sleep(1)
 print("Connected! IP: http://", wlan.ifconfig()[0])
 
+def map_slider_to_servo(slider_value):
+    # Map the slider value from range 1802-7664 to the angle range 0-180
+    angle = (slider_value - 1802) * (180 / (7664 - 1802))
+    # Convert the angle to PWM duty cycle (between 40-115 for most servos)
+    duty_cycle = 40 + (angle * (115 - 40) / 180)
+    return duty_cycle
 
 # Function to control motors
 def control_motors(direction):
@@ -260,7 +272,10 @@ HTML = """
 
             slider.addEventListener("input", (e) => {
                 sliderValue.textContent = `Slider Value: ${e.target.value}`;
+                // Send the slider value to the server
+                fetch(`/slider=${e.target.value}`).catch(console.error);
             });
+
 
             function resetJoystick() {
                 isDragging = false;
@@ -353,10 +368,17 @@ while True:
     command = request.split(" ")[1][1:]
     print("Command:", command)
 
-    # Control motors or play song based on command
-    if command in ["forward", "backward", "left", "right", "stop"]:
+    if command.startswith("slider"):
+        # Extract slider value from the URL (e.g., /slider=1802)
+        slider_value = int(command.split('=')[1])
+        duty_cycle = map_slider_to_servo(slider_value)
+        servo_pwm.duty_u16(int(duty_cycle * 65535 / 255))  # Update servo position using PWM duty cycle
+        response = f"Slider value: {slider_value}, Servo position updated."
+
+    elif command in ["forward", "backward", "left", "right", "stop"]:
         control_motors(command)
         response = "Command received: " + command
+
     elif command == "sound":
         for note, duration in song:
             if note in NOTES:
@@ -365,6 +387,11 @@ while True:
         response = "Song played."
     else:
         response = HTML
+
+    # Serve HTML page or response
+    cl.send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n" + response)
+    cl.close()
+
 
     # Serve HTML page or response
     cl.send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n" + response)
